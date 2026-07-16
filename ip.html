@@ -1,365 +1,198 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>公网 IP 地址查询</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的公网IP</title>
+<style>
+  :root{
+    --bg-1:#0f2027;
+    --bg-2:#203a43;
+    --bg-3:#2c5364;
+    --card-bg:rgba(255,255,255,.08);
+    --card-border:rgba(255,255,255,.16);
+    --accent:#22d3ee;
+    --accent-dim:rgba(34,211,238,.18);
+    --text:#f1f5f9;
+    --text-dim:rgba(241,245,249,.58);
+    --btn-h:40px;
+  }
+  *{box-sizing:border-box}
+  body{
+    display:flex;justify-content:center;align-items:center;
+    min-height:100vh;margin:0;
+    background:linear-gradient(135deg,var(--bg-1),var(--bg-2),var(--bg-3));
+    font-family:"Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+  }
 
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            padding: 20px;
-        }
+  .card{
+    width:min(380px,88vw);
+    background:var(--card-bg);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--card-border);
+    border-radius:24px;
+    padding:34px 30px 28px;
+    box-shadow:0 20px 70px rgba(0,0,0,.42);
+    text-align:center;
+  }
+  .card .icon{
+    width:54px;height:54px;margin:0 auto 16px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:16px;
+    background:var(--accent-dim);
+    border:1px solid rgba(34,211,238,.35);
+    color:var(--accent);
+  }
+  .card .icon svg{width:28px;height:28px}
 
-        .card {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 48px 40px;
-            max-width: 480px;
-            width: 100%;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            transition: transform 0.3s ease;
-        }
+  .card .title{
+    font-size:.82em;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--text-dim);margin-bottom:12px;
+  }
+  .card .ip{
+    font-size:2.2em;font-weight:700;letter-spacing:.02em;
+    word-break:break-all;line-height:1.25;min-height:1.25em;user-select:text;
+  }
+  .card .meta{
+    margin-top:10px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    font-size:.95em;color:var(--text-dim);min-height:1.3em;
+  }
+  .card .meta .pin{width:15px;height:15px;flex:none;opacity:.85}
+  .card .meta span{user-select:text}
 
-        .card:hover {
-            transform: translateY(-4px);
-        }
+  .actions{
+    margin-top:24px;
+    display:flex;align-items:center;justify-content:center;gap:12px;
+  }
+  .actions button{
+    height:var(--btn-h);border:1px solid transparent;border-radius:10px;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    color:var(--text);font-size:.95em;font-family:inherit;cursor:pointer;
+    transition:background .2s ease,transform .15s ease,border-color .2s ease;
+    user-select:none;
+  }
+  .actions button:active{transform:translateY(1px)}
+  .actions .copy{
+    padding:0 18px;
+    background:var(--accent-dim);
+    border-color:rgba(34,211,238,.45);
+  }
+  .actions .copy:hover{background:rgba(34,211,238,.30)}
+  .actions .copy svg{width:16px;height:16px}
+  .actions .refresh{
+    width:var(--btn-h);padding:0;
+    background:rgba(255,255,255,.10);
+    border-color:rgba(255,255,255,.22);
+  }
+  .actions .refresh:hover{background:rgba(255,255,255,.20)}
+  .actions .refresh svg{width:18px;height:18px}
+  .actions .refresh.spin svg{animation:spin .55s linear}
 
-        .icon {
-            font-size: 56px;
-            margin-bottom: 16px;
-        }
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-        h1 {
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            margin-bottom: 32px;
-        }
-
-        .ip-display {
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 24px 16px;
-            margin-bottom: 24px;
-            min-height: 80px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            position: relative;
-        }
-
-        .ip-address.copyable {
-            cursor: pointer;
-            transition: color 0.2s ease;
-            user-select: all;
-        }
-
-        .ip-address.copyable:hover {
-            color: #a5b4fc;
-        }
-
-        .ip-address.copied {
-            color: #34d399 !important;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #fff;
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 999;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .ip-address {
-            font-size: 32px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 1px;
-            word-break: break-all;
-        }
-
-        .ip-address.loading {
-            color: rgba(255, 255, 255, 0.4);
-            font-weight: 400;
-            font-size: 18px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .ip-address.error {
-            color: #f87171;
-            font-size: 16px;
-            font-weight: 400;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        .ip-address .spinner {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            border: 3px solid rgba(255, 255, 255, 0.15);
-            border-top-color: #818cf8;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-
-        .detail-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 14px 10px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .detail-item .label {
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .detail-item .value {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .detail-item .value.na {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border: none;
-            color: #fff;
-            padding: 14px 32px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            width: 100%;
-            letter-spacing: 0.3px;
-        }
-
-        .btn:hover {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            box-shadow: 0 8px 25px -8px rgba(99, 102, 241, 0.5);
-            transform: scale(1.02);
-        }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .footer {
-            margin-top: 20px;
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 12px;
-        }
-    </style>
+  .toast{
+    position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(18px);
+    background:rgba(15,23,42,.94);color:#fff;
+    padding:12px 22px;border-radius:12px;font-size:.92em;
+    border:1px solid rgba(34,211,238,.45);
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
+    opacity:0;pointer-events:none;
+    transition:opacity .3s ease,transform .3s ease;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
 </head>
 <body>
-    <div class="card">
-        <div class="icon">🌐</div>
-        <h1>公网 IP 地址</h1>
-        <p class="subtitle">查看当前设备的公网 IP 及网络信息</p>
-
-        <div class="ip-display">
-            <div class="ip-address" id="ipDisplay">
-                <span class="spinner"></span>
-                正在获取...
-            </div>
-        </div>
-
-        <div class="toast" id="toast"></div>
-
-        <div class="details">
-            <div class="detail-item">
-                <div class="label">IP 版本</div>
-                <div class="value" id="ipVersion">-</div>
-            </div>
-            <div class="detail-item">
-                <div class="label">运营商</div>
-                <div class="value" id="isp">-</div>
-            </div>
-            <div class="detail-item">
-                <div class="label">所在国家</div>
-                <div class="value" id="country">-</div>
-            </div>
-            <div class="detail-item">
-                <div class="label">所在城市</div>
-                <div class="value" id="city">-</div>
-            </div>
-        </div>
-
-        <button class="btn" id="refreshBtn">🔄 重新获取</button>
-
-        <div class="footer">Powered by ip-api.com</div>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+    </div>
+    <div class="title">当前公网 IP</div>
+    <div class="ip" id="ip">加载中…</div>
+    <div class="meta" id="meta">
+      <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+      <span id="metaText"></span>
     </div>
 
-    <script>
-        const ipDisplay = document.getElementById('ipDisplay');
-        const ipVersion = document.getElementById('ipVersion');
-        const isp = document.getElementById('isp');
-        const country = document.getElementById('country');
-        const city = document.getElementById('city');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const toast = document.getElementById('toast');
-        let currentIP = '';
+    <div class="actions">
+      <button class="copy" id="copy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>点击复制</span>
+      </button>
+      <button class="refresh" id="refresh" title="刷新 IP">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-        function setLoading() {
-            ipDisplay.className = 'ip-address loading';
-            ipDisplay.innerHTML = '<span class="spinner"></span>正在获取...';
-            ipVersion.textContent = '-';
-            isp.textContent = '-';
-            country.textContent = '-';
-            city.textContent = '-';
-        }
+  <div class="toast" id="toast">✅ 已复制到剪贴板</div>
 
-        function setError(msg) {
-            ipDisplay.className = 'ip-address error';
-            ipDisplay.textContent = msg || '获取失败，请重试';
-            ipVersion.textContent = '-';
-            isp.textContent = '-';
-            country.textContent = '-';
-            city.textContent = '-';
-        }
+<script>
+  let ip='';
+  const ipEl=document.getElementById('ip');
+  const metaText=document.getElementById('metaText');
+  const copyBtn=document.getElementById('copy');
+  const refreshBtn=document.getElementById('refresh');
+  const toastEl=document.getElementById('toast');
 
-        async function fetchPublicIP() {
-            setLoading();
+  function loadIp(){
+    ipEl.textContent='加载中…';
+    metaText.textContent='';
+    fetch('https://myip.ipip.net').then(r=>r.text()).then(t=>{
+      ip=(t.match(/\d+\.\d+\.\d+\.\d+/)||['获取失败'])[0];
+      ipEl.textContent=ip;
+      const m=t.match(/来自于[:：]\s*([^\n]+)/);
+      metaText.textContent=m?m[1].trim():'';
+    }).catch(()=>{
+      ip='获取失败';
+      ipEl.textContent=ip;
+      metaText.textContent='';
+    });
+  }
+  loadIp();
 
-            try {
-                // 使用 ip-api.com 的免费 JSON API（支持 HTTP）
-                const response = await fetch('http://ip-api.com/json/?lang=zh-CN', {
-                    signal: AbortSignal.timeout(10000)
-                });
+  let toastTimer=null;
+  function showToast(msg){
+    toastEl.textContent=msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toastEl.classList.remove('show'),1800);
+  }
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+  copyBtn.onclick=function(){
+    if(ip&&ip!=='获取失败'){
+      navigator.clipboard.writeText(ip).then(()=>showToast('✅ 已复制到剪贴板'));
+    }else{
+      showToast('⚠️ 暂无可复制的 IP');
+    }
+  };
 
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    currentIP = data.query || '';
-                    ipDisplay.className = 'ip-address copyable';
-                    ipDisplay.textContent = currentIP || '未知';
-
-                    ipVersion.textContent = currentIP && currentIP.includes(':') ? 'IPv6' : 'IPv4';
-                    isp.textContent = data.isp || '未知';
-                    country.textContent = data.country || '未知';
-                    city.textContent = data.city || '未知';
-
-                    // 若国家/城市为空，显示为 N/A
-                    if (!data.city) city.innerHTML = '<span class="na">N/A</span>';
-                    if (!data.country) country.innerHTML = '<span class="na">N/A</span>';
-                } else {
-                    setError('查询失败：' + (data.message || '未知错误'));
-                }
-            } catch (err) {
-                if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-                    setError('请求超时，请检查网络连接');
-                } else {
-                    setError('网络错误：' + err.message);
-                }
-            }
-        }
-
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-
-        async function copyIP() {
-            if (!currentIP) {
-                showToast('暂无 IP 地址可复制');
-                return;
-            }
-            try {
-                await navigator.clipboard.writeText(currentIP);
-                ipDisplay.classList.add('copied');
-                showToast('已复制到剪贴板：' + currentIP);
-                setTimeout(() => ipDisplay.classList.remove('copied'), 2000);
-            } catch {
-                // 降级方案
-                const textarea = document.createElement('textarea');
-                textarea.value = currentIP;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast('已复制到剪贴板：' + currentIP);
-            }
-        }
-
-        // 点击按钮刷新
-        refreshBtn.addEventListener('click', fetchPublicIP);
-
-        // 点击 IP 复制
-        ipDisplay.addEventListener('click', copyIP);
-
-        // 页面加载时自动获取
-        fetchPublicIP();
-    </script>
+  refreshBtn.onclick=function(){
+    refreshBtn.classList.add('spin');
+    refreshBtn.disabled=true;
+    loadIp();
+    showToast('🔄 正在刷新…');
+    setTimeout(()=>{
+      refreshBtn.classList.remove('spin');
+      refreshBtn.disabled=false;
+    },550);
+  };
+</script>
 </body>
 </html>
